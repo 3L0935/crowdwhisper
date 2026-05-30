@@ -1,233 +1,411 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en" data-theme="dark">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CrowdWhisper — Steam Player Feedback Analysis</title>
-    <link rel="stylesheet" href="/static/style.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-</head>
-<body>
-    <div class="container">
-        <header class="header">
-            <div class="logo">
-                <span class="logo-icon">🤫</span>
-                <div class="logo-text">
-                    <h1>CrowdWhisper</h1>
-                    <span class="logo-sub">Steam Player Feedback Analysis</span>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>CrowdWhisper — Steam Player Feedback Analysis</title>
+        <link rel="stylesheet" href="/static/style.css" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+            rel="stylesheet"
+        />
+    </head>
+    <body>
+        <div class="container">
+            <header class="header">
+                <div class="logo">
+                    <span class="logo-icon">🤫</span>
+                    <div class="logo-text">
+                        <h1>CrowdWhisper</h1>
+                        <span class="logo-sub"
+                            >Steam Player Feedback Analysis</span
+                        >
+                    </div>
                 </div>
-            </div>
-        </header>
+            </header>
 
-        <section class="hero">
-            <h2>What is your <span class="gradient">crowd</span> whispering?</h2>
-            <p>Enter a Steam AppID to analyze thousands of player reviews in seconds. Find bugs, spot trends, and know what to fix next.</p>
+            <section class="hero">
+                <h2>
+                    What is your <span class="gradient">crowd</span> whispering?
+                </h2>
+                <p>
+                    Enter a Steam AppID to analyze thousands of player reviews
+                    in seconds. Find bugs, spot trends, and know what to fix
+                    next.
+                </p>
 
-            <form method="POST" action="/analyze" class="search-form" id="analyze-form">
-                <div class="input-group">
-                    <input
-                        type="text"
-                        name="appid"
-                        id="appid-input"
-                        placeholder="Enter Steam AppID (e.g. 2970730 for Bodycam)"
-                        value="{{ appid }}"
-                        required
-                        autofocus
-                    >
-                    <button type="submit" class="btn-primary" id="analyze-btn">
-                        <span class="btn-text">Analyze</span>
-                        <span class="btn-spinner hidden">⏳</span>
+                <form
+                    method="POST"
+                    action="/analyze"
+                    class="search-form"
+                    id="analyze-form"
+                >
+                    <div class="input-group">
+                        <input
+                            type="text"
+                            name="appid"
+                            id="appid-input"
+                            placeholder="Enter Steam AppID (e.g. 2406770 for Bodycam)"
+                            value="{{ appid }}"
+                            required
+                            autofocus
+                        />
+                        <button
+                            type="submit"
+                            class="btn-primary"
+                            id="analyze-btn"
+                        >
+                            <span class="btn-text">Analyze</span>
+                            <span class="btn-spinner hidden">⏳</span>
+                        </button>
+                    </div>
+                </form>
+
+                <div class="examples">
+                    <span>Try:</span>
+                    <button class="example-btn" data-appid="2406770">
+                        Bodycam
+                    </button>
+                    <button class="example-btn" data-appid="730">CS2</button>
+                    <button class="example-btn" data-appid="252490">
+                        Rust
+                    </button>
+                    <button class="example-btn" data-appid="1623730">
+                        Palworld
                     </button>
                 </div>
-            </form>
+            </section>
 
-            <div class="examples">
-                <span>Try:</span>
-                <button class="example-btn" data-appid="2970730">Bodycam</button>
-                <button class="example-btn" data-appid="730">CS2</button>
-                <button class="example-btn" data-appid="252490">Rust</button>
-                <button class="example-btn" data-appid="1623730">Palworld</button>
-            </div>
-        </section>
-
-        {% if result %}
-        <section class="results">
-            {% if result.error %}
-            <div class="error-box">
-                <span class="error-icon">⚠️</span>
-                <div>
-                    <strong>Analysis failed</strong>
-                    <p>{{ result.error }}</p>
-                </div>
-            </div>
-            {% else %}
-
-            <!-- Game Header -->
-            <div class="game-header">
-                {% if result.game_img %}
-                <img src="{{ result.game_img }}" alt="{{ result.game_name }}" class="game-img">
-                {% endif %}
-                <div class="game-info">
-                    <h3>{{ result.game_name }}</h3>
-                    <div class="review-meta">
-                        <span class="stat-badge total">{{ result.total }} reviews analyzed</span>
-                        <span class="stat-badge positive">{{ result.positive_pct }}% positive</span>
-                        <span class="stat-badge negative">{{ result.negative_pct }}% negative</span>
+            {% if result %}
+            <section class="results">
+                {% if result.error %}
+                <div class="error-box">
+                    <span class="error-icon">⚠️</span>
+                    <div>
+                        <strong>Analysis failed</strong>
+                        <p>{{ result.error }}</p>
                     </div>
                 </div>
-            </div>
+                {% else %}
 
-            <!-- Score Ring -->
-            <div class="score-section">
-                <div class="score-ring {{ 'score-good' if result.positive_pct >= 70 else 'score-mid' if result.positive_pct >= 40 else 'score-bad' }}">
-                    <div class="score-circle">
-                        <span class="score-value">{{ result.positive_pct }}%</span>
-                        <span class="score-label">Positive</span>
-                    </div>
-                </div>
-                <div class="score-stats">
-                    <div class="stat-card">
-                        <span class="stat-num positive-num">{{ result.positive }}</span>
-                        <span class="stat-desc">Positive reviews</span>
-                    </div>
-                    <div class="stat-card">
-                        <span class="stat-num negative-num">{{ result.negative }}</span>
-                        <span class="stat-desc">Negative reviews</span>
-                    </div>
-                    <div class="stat-card">
-                        <span class="stat-num neutral-num">{{ result.recent.count }}</span>
-                        <span class="stat-desc">Last 30 days</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Recent Trend -->
-            {% if result.recent.count > 0 %}
-            <div class="section">
-                <h4>📈 Recent Trend (30 days)</h4>
-                <div class="trend-bars">
-                    <div class="trend-item">
-                        <span class="trend-label">Total</span>
-                        <div class="trend-bar-bg">
-                            <div class="trend-bar total-bar" style="width: 100%">{{ result.recent.count }}</div>
-                        </div>
-                    </div>
-                    <div class="trend-item">
-                        <span class="trend-label">👍 Positive</span>
-                        <div class="trend-bar-bg">
-                            <div class="trend-bar positive-bar" style="width: {{ (result.recent.positive / result.recent.count * 100) if result.recent.count else 0 }}%">{{ result.recent.positive }}</div>
-                        </div>
-                    </div>
-                    <div class="trend-item">
-                        <span class="trend-label">👎 Negative</span>
-                        <div class="trend-bar-bg">
-                            <div class="trend-bar negative-bar" style="width: {{ (result.recent.negative / result.recent.count * 100) if result.recent.count else 0 }}%">{{ result.recent.negative }}</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- Top Keywords -->
-            {% if result.top_keywords %}
-            <div class="sections-grid">
-                <div class="section">
-                    <h4>🔑 Top Keywords</h4>
-                    <div class="word-cloud">
-                        {% for word, count in result.top_keywords[:25] %}
-                        <span class="word-tag" style="font-size: {{ 12 + (count / result.top_keywords[0][1] * 18) }}px">{{ word }}</span>
-                        {% endfor %}
-                    </div>
-                </div>
-
-                <div class="section">
-                    <h4>😠 Top Complaints</h4>
-                    {% if result.top_complaints %}
-                    <div class="keyword-list">
-                        {% for word, count in result.top_complaints[:10] %}
-                        <div class="keyword-row">
-                            <span class="keyword-word">{{ word }}</span>
-                            <span class="keyword-count">{{ count }}</span>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% else %}
-                    <p class="empty">No significant complaints detected.</p>
+                <!-- Game Header -->
+                <div class="game-header">
+                    {% if result.game_img %}
+                    <img
+                        src="{{ result.game_img }}"
+                        alt="{{ result.game_name }}"
+                        class="game-img"
+                    />
                     {% endif %}
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- Top Reviews -->
-            {% if result.top_reviews %}
-            <div class="section">
-                <h4>⭐ Most Helpful Reviews</h4>
-                <div class="reviews-grid">
-                    <div class="review-col">
-                        <h5 class="col-title col-positive">👍 Positive</h5>
-                        {% for r in result.top_reviews.positive[:5] %}
-                        <div class="review-card positive-card">
-                            <div class="review-header">
-                                <span class="review-author">{{ r.get('author', {}).get('steamid', 'Unknown')[:12] }}...</span>
-                                <span class="review-playtime">{{ (r.get('author', {}).get('playtime_forever', 0) / 60)|int }}h played</span>
-                            </div>
-                            <p class="review-text">{{ r.get('review', '')[:300] }}{% if r.get('review', '')|length > 300 %}...{% endif %}</p>
-                            <div class="review-footer">
-                                <span class="review-helpful">👍 {{ r.get('votes_up', 0) }}</span>
-                            </div>
+                    <div class="game-info">
+                        <h3>{{ result.game_name }}</h3>
+                        <div class="review-meta">
+                            <span class="stat-badge total"
+                                >{{ "{:,}".format(result.total_steam) }} total
+                                reviews</span
+                            >
+                            <span class="stat-badge positive"
+                                >{{ result.positive_steam_pct }}% positive</span
+                            >
+                            <span class="stat-badge negative"
+                                >{{ result.negative_steam_pct }}% negative</span
+                            >
                         </div>
-                        {% endfor %}
-                    </div>
-                    <div class="review-col">
-                        <h5 class="col-title col-negative">👎 Negative</h5>
-                        {% for r in result.top_reviews.negative[:5] %}
-                        <div class="review-card negative-card">
-                            <div class="review-header">
-                                <span class="review-author">{{ r.get('author', {}).get('steamid', 'Unknown')[:12] }}...</span>
-                                <span class="review-playtime">{{ (r.get('author', {}).get('playtime_forever', 0) / 60)|int }}h played</span>
-                            </div>
-                            <p class="review-text">{{ r.get('review', '')[:300] }}{% if r.get('review', '')|length > 300 %}...{% endif %}</p>
-                            <div class="review-footer">
-                                <span class="review-helpful">👍 {{ r.get('votes_up', 0) }}</span>
-                            </div>
-                        </div>
-                        {% endfor %}
                     </div>
                 </div>
-            </div>
+
+                <!-- Score Ring (REAL Steam totals) -->
+                <div class="score-section">
+                    <div
+                        class="score-ring {{ 'score-good' if result.positive_steam_pct >= 70 else 'score-mid' if result.positive_steam_pct >= 40 else 'score-bad' }}"
+                    >
+                        <div class="score-circle">
+                            <span class="score-value"
+                                >{{ result.positive_steam_pct }}<span
+                                    class="score-pct"
+                                    >%</span
+                                ></span
+                            >
+                            <span class="score-label"
+                                >of reviews are positive</span
+                            >
+                        </div>
+                    </div>
+                    <div class="score-stats">
+                        <div class="stat-card">
+                            <span class="stat-num positive-num"
+                                >{{ "{:,}".format(result.positive_steam)
+                                }}</span
+                            >
+                            <span class="stat-desc">Positive</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-num negative-num"
+                                >{{ "{:,}".format(result.negative_steam)
+                                }}</span
+                            >
+                            <span class="stat-desc">Negative</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-num neutral-num"
+                                >{{ result.recent.count }}</span
+                            >
+                            <span class="stat-desc">Last 30 days</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Trend -->
+                {% if result.recent.count > 0 %}
+                <div class="section">
+                    <h4>📈 Last 30 Days</h4>
+                    <div class="trend-bars">
+                        <div class="trend-item">
+                            <span class="trend-label">Total</span>
+                            <div class="trend-bar-bg">
+                                <div
+                                    class="trend-bar total-bar"
+                                    style="width: 100%"
+                                >
+                                    {{ result.recent.count }} reviews
+                                </div>
+                            </div>
+                        </div>
+                        <div class="trend-item">
+                            <span class="trend-label">👍 Positive</span>
+                            <div class="trend-bar-bg">
+                                <div
+                                    class="trend-bar positive-bar"
+                                    style="width: {{ (result.recent.positive / result.recent.count * 100) if result.recent.count else 0 }}%"
+                                >
+                                    {{ result.recent.positive }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="trend-item">
+                            <span class="trend-label">👎 Negative</span>
+                            <div class="trend-bar-bg">
+                                <div
+                                    class="trend-bar negative-bar"
+                                    style="width: {{ (result.recent.negative / result.recent.count * 100) if result.recent.count else 0 }}%"
+                                >
+                                    {{ result.recent.negative }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Top Keywords -->
+                {% if result.top_keywords %}
+                <div class="sections-grid">
+                    <div class="section">
+                        <h4>🔑 What players talk about</h4>
+                        <div class="word-cloud">
+                            {% for word, count in result.top_keywords[:30] %}
+                            <span
+                                class="word-tag"
+                                style="font-size: {{ 12 + (count / result.top_keywords[0][1] * 18) }}px"
+                                >{{ word }}</span
+                            >
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <h4>😠 Top complaints</h4>
+                        {% if result.top_complaints %}
+                        <div class="keyword-list">
+                            {% for word, count in result.top_complaints[:12] %}
+                            <div class="keyword-row">
+                                <span class="keyword-word">{{ word }}</span>
+                                <span class="keyword-count">{{ count }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p class="empty">No significant complaints detected.</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Forum topics -->
+                {% if result.forum_topics %}
+                <div class="section">
+                    <h4>💬 Hot forum topics</h4>
+                    <div class="forum-list">
+                        {% for topic in result.forum_topics %}
+                        <a
+                            href="{{ topic.url }}"
+                            target="_blank"
+                            class="forum-item"
+                        >
+                            <span class="forum-title">{{ topic.title }}</span>
+                            <span class="forum-replies"
+                                >{{ topic.replies }} replies</span
+                            >
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Top Reviews -->
+                {% if result.top_reviews %}
+                <div class="section">
+                    <h4>⭐ Most helpful reviews</h4>
+                    <div class="reviews-grid">
+                        <div class="review-col">
+                            <h5 class="col-title col-positive">👍 Positive</h5>
+                            {% for r in result.top_reviews.positive %}
+                            <div
+                                class="review-card positive-card review-item"
+                                data-review="{{ r.get('review', '') | e }}"
+                            >
+                                <div class="review-header">
+                                    <span class="review-author"
+                                        >{{ r.get('author', {}).get('steamid',
+                                        'Unknown')[:12] }}...</span
+                                    >
+                                    <span class="review-playtime"
+                                        >{{ (r.get('author',
+                                        {}).get('playtime_forever', 0) / 60)|int
+                                        }}h played</span
+                                    >
+                                </div>
+                                <p class="review-text">
+                                    {{ r.get('review', '')[:400] }}{% if
+                                    r.get('review', '')|length > 400 %}...{%
+                                    endif %}
+                                </p>
+                                <div class="review-footer">
+                                    <span class="review-helpful"
+                                        >👍 {{ r.get('votes_up', 0) }}</span
+                                    >
+                                    <button
+                                        class="translate-btn"
+                                        onclick="translateReview(this)"
+                                    >
+                                        🌍 Translate
+                                    </button>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="review-col">
+                            <h5 class="col-title col-negative">👎 Negative</h5>
+                            {% for r in result.top_reviews.negative %}
+                            <div
+                                class="review-card negative-card review-item"
+                                data-review="{{ r.get('review', '') | e }}"
+                            >
+                                <div class="review-header">
+                                    <span class="review-author"
+                                        >{{ r.get('author', {}).get('steamid',
+                                        'Unknown')[:12] }}...</span
+                                    >
+                                    <span class="review-playtime"
+                                        >{{ (r.get('author',
+                                        {}).get('playtime_forever', 0) / 60)|int
+                                        }}h played</span
+                                    >
+                                </div>
+                                <p class="review-text">
+                                    {{ r.get('review', '')[:400] }}{% if
+                                    r.get('review', '')|length > 400 %}...{%
+                                    endif %}
+                                </p>
+                                <div class="review-footer">
+                                    <span class="review-helpful"
+                                        >👍 {{ r.get('votes_up', 0) }}</span
+                                    >
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- API hint -->
+                <div class="section api-hint">
+                    <h6>🔌 API</h6>
+                    <code>GET /api/analyze/{{ appid }}</code> — returns JSON.
+                </div>
+                {% endif %}
+            </section>
             {% endif %}
 
-            <!-- API hint -->
-            <div class="section api-hint">
-                <h6>🔌 API Access</h6>
-                <code>GET /api/analyze/{{ appid }}</code> — returns JSON for your CI/CD pipeline.
-            </div>
-            {% endif %}
-        </section>
-        {% endif %}
+            <footer class="footer">
+                <p>
+                    CrowdWhisper — built by
+                    <a href="https://github.com/3L0935" target="_blank">elo</a>
+                </p>
+            </footer>
+        </div>
 
-        <footer class="footer">
-            <p>CrowdWhisper — built by <a href="https://github.com/3L0935" target="_blank">elo</a></p>
-        </footer>
-    </div>
+        <script>
+            document
+                .getElementById("analyze-form")
+                .addEventListener("submit", function () {
+                    const btn = document.getElementById("analyze-btn");
+                    btn.disabled = true;
+                    btn.querySelector(".btn-text").textContent = "Analyzing...";
+                    btn.querySelector(".btn-spinner").classList.remove(
+                        "hidden",
+                    );
+                });
 
-    <script>
-        // Loader on form submit
-        document.getElementById('analyze-form').addEventListener('submit', function() {
-            const btn = document.getElementById('analyze-btn');
-            btn.disabled = true;
-            btn.querySelector('.btn-text').textContent = 'Analyzing...';
-            btn.querySelector('.btn-spinner').classList.remove('hidden');
-        });
-
-        // Example buttons fill appid
-        document.querySelectorAll('.example-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                document.getElementById('appid-input').value = this.dataset.appid;
-                document.getElementById('analyze-form').dispatchEvent(new Event('submit'));
+            document.querySelectorAll(".example-btn").forEach((btn) => {
+                btn.addEventListener("click", function () {
+                    document.getElementById("appid-input").value =
+                        this.dataset.appid;
+                    document
+                        .getElementById("analyze-form")
+                        .dispatchEvent(new Event("submit"));
+                });
             });
-        });
-    </script>
-</body>
+
+            async function translateReview(btn) {
+                const card = btn.closest(".review-item");
+                const textEl = card.querySelector(".review-text");
+                const original = textEl.textContent;
+
+                if (textEl.dataset.translated) {
+                    textEl.textContent = textEl.dataset.original;
+                    delete textEl.dataset.translated;
+                    delete textEl.dataset.original;
+                    btn.textContent = "🌍 Translate";
+                    return;
+                }
+
+                btn.textContent = "⏳ Translating...";
+                btn.disabled = true;
+
+                try {
+                    const url =
+                        "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=" +
+                        encodeURIComponent(original);
+                    const resp = await fetch(url);
+                    const data = await resp.json();
+                    const translated = data[0].map((s) => s[0]).join("");
+
+                    textEl.dataset.original = original;
+                    textEl.dataset.translated = "1";
+                    textEl.textContent = translated;
+                    btn.textContent = "🔁 Original";
+                } catch (e) {
+                    btn.textContent = "❌ Failed";
+                    setTimeout(() => {
+                        btn.textContent = "🌍 Translate";
+                    }, 2000);
+                } finally {
+                    btn.disabled = false;
+                }
+            }
+        </script>
+    </body>
 </html>
