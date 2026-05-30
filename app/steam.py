@@ -186,6 +186,9 @@ async def fetch_forum_topics(appid: int, max_topics: int = 10) -> list[dict]:
         if not title or len(title) < 3:
             continue
 
+        # Strip "PINNED:", "STICKY:", etc
+        title = re.sub(r"^(PINNED|STICKY|ANNONCE|EPINGLÉ)\s*:\s*", "", title, flags=re.IGNORECASE).strip()
+
         # Find nearest reply count after this overlay
         reply_count = 0
         for rp in replies:
@@ -197,4 +200,12 @@ async def fetch_forum_topics(appid: int, max_topics: int = 10) -> list[dict]:
             {"title": title, "url": url, "replies": reply_count}
         )
 
-    return topics[:max_topics]
+    # Filter out low-effort topics and sort by replies
+    MIN_WORDS = 3
+    filtered = [
+        t for t in topics
+        if len(t["title"].split()) >= MIN_WORDS
+    ]
+    filtered.sort(key=lambda t: t["replies"], reverse=True)
+
+    return filtered[:max_topics]

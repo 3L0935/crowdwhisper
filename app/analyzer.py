@@ -137,6 +137,31 @@ _STOPWORDS = {
     "lot", "lots", "little", "bit",
 }
 
+# Additional stopwords observed in real data
+_EXTRA_NOISE = {
+    # English common words still leaking
+    "it's", "dont", "don't", "doesnt", "doesn't", "now", "very", "what",
+    "than", "then", "thats", "that's", "theres", "there's", "youre",
+    "you're", "theyre", "they're", "wont", "won't", "cant", "can't",
+    "isnt", "isn't", "wasnt", "wasn't", "didnt", "didn't", "hasnt",
+    "hasn't", "havent", "haven't", "wouldnt", "wouldn't", "couldnt",
+    "couldn't", "shouldnt", "shouldn't",
+    # Turkish noise words
+    "oyun", "oyna", "oyuna", "oyunu", "gir", "vur", "atil", "atıl",
+    "bir", "var", "yok", "cok", "çok", "daha", "iyi", "kotu", "kötü",
+    "ama", "ve", "ile", "icin", "için", "gibi", "adam", "güzel",
+    "guzel", "cok", "cok", "olan", "kadar", "sonra", "zaman", "daha",
+    "bile", "hem", "veya", "yani", "ancak", "cunku", "cünkü", "çünkü",
+    "bu", "su", "şu", "o", "ne", "nasil", "nasıl", "nerede", "nicin", "niçin",
+    "arkadas", "arkadaş", "evet", "hayir", "hayır", "tam", "cok", "her",
+    "baska", "başka", "biraz", "fazla", "en", "cok", "pek", "belki", "hemen",
+    # Words that appear in BOTH camps equally — noise for sentiment
+    "graphics", "fps",
+    # Generic review structure words
+    "worth", "buy", "recommend", "would", "could",
+}
+_STOPWORDS.update(_EXTRA_NOISE)
+
 # Additional filter: words shorter than 3 chars or purely numeric
 # (but we keep them in the original review text for display)
 
@@ -149,6 +174,10 @@ def _is_noise_word(word: str) -> bool:
     if word.isdigit():
         return True
     if word.lower() in _STOPWORDS:
+        return True
+    # Detect Cyrillic characters (common noise words in reviews)
+    import unicodedata
+    if any(ord(c) >= 0x0400 and ord(c) <= 0x04FF for c in word):
         return True
     return False
 
@@ -208,6 +237,49 @@ def analyze_reviews(reviews: list[dict]) -> dict:
     complaint_counts = Counter(complaint_words)
     praise_counts = Counter(praise_words)
 
+    # Score complaints and praise by distinctiveness:
+    # a word appearing equally in both camps is noise, even if frequent.
+    # Use ratio: if word appears N times in negatives and M in positives,
+    # with N_pos reviews and N_neg reviews total:
+    pos_total = len(positive) or 1
+    neg_total = len(negative) or 1
+
+    def distinctiveness(word: str, camp_count: int, other_count: int, camp_total: int, other_total: int) -> float:
+        """Score how distinctive a word is for one sentiment camp.
+        Returns a score where >1 = more likely in this camp.
+        """
+        if camp_count < 3:
+            return 0  # Too rare to be meaningful
+        camp_rate = camp_count / camp_total
+        other_rate = other_count / other_total
+        if other_rate == 0:
+            return camp_rate * 5  # Never said by the other camp — very distinctive
+        return camp_rate / other_rate * min(camp_count, 10)  # Cap total count impact
+
+    # Build scored complaint/praise lists
+    all_neg_words = set(complaint_counts.keys()) | set(praise_counts.keys())
+    scored_complaints = []
+    scored_praise = []
+
+    for word in all_neg_words:
+        neg_count = complaint_counts.get(word, 0)
+        pos_count = praise_counts.get(word, 0)
+
+        neg_score = distinctiveness(word, neg_count, pos_count, neg_total, pos_total)
+        if neg_score > 0:
+            scored_complaints.append((word, neg_count, round(neg_score, 1)))
+
+        pos_score = distinctiveness(word, pos_count, neg_count, pos_total, neg_total)
+        if pos_score > 0:
+            scored_praise.append((word, pos_count, round(pos_score, 1)))
+
+    # Sort by distinctiveness score, then by count as tiebreaker
+    scored_complaints.sort(key=lambda x: (x[2], x[1]), reverse=True)
+    scored_praise.sort(key=lambda x: (x[2], x[1]), reverse=True)
+
+    top_complaints = [(w, c) for w, c, s in scored_complaints[:15]]
+    top_praise = [(w, c) for w, c, s in scored_praise[:15]]
+
     # Score a review's "informativeness" — combine votes + text substance
     def informative_score(r):
         text = r.get("review", "")
@@ -256,8 +328,8 @@ def analyze_reviews(reviews: list[dict]) -> dict:
             "negative": len([r for r in recent if not r.get("voted_up")]),
         },
         "top_keywords": word_counts.most_common(20),
-        "top_complaints": complaint_counts.most_common(15),
-        "top_praise": praise_counts.most_common(15),
+        "top_complaints": top_complaints,
+        "top_praise": top_praise,
         "top_reviews": {
             "positive": sort_by_helpful(positive, limit=10),
             "negative": sort_by_helpful(negative, limit=10),
